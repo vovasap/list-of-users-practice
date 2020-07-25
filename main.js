@@ -1,12 +1,18 @@
-const btnTest = document.querySelector('.btn-create-table');
+const btnCreateTable = document.querySelector('.btn__create-table');
+const id = document.querySelector('.id');
+const postAddress = document.querySelector('.post-address');
+const geo = document.querySelector('.geo');
+const phone = document.querySelector('.phone');
+const company = document.querySelector('.company');
+const overlay = document.querySelector('.overlay');
+const modal = document.querySelector('.modal');
+const btnCloseModal = document.querySelector('.btn__close');
 
 const createTable = function () {
   const tableHeader = ['name', 'username', 'email', 'website'];
 
   const table = document.createElement('table');
   table.setAttribute('class', 'users');
-
-  const btnLoadJsonData = document.querySelector('.btn');
 
   let createTableHeader = () => {
     let row = table.appendChild(createTableRow());
@@ -19,6 +25,12 @@ const createTable = function () {
   let createTableContent = (jsonData) => {
     jsonData.forEach((obj) => {
       let row = table.appendChild(createTableRow());
+      row.setAttribute('class', `${obj.id}`);
+      row.addEventListener('click', () => {
+        overlay.classList.remove('hidden');
+        modal.classList.remove('hidden');
+        loadAdditionalInfo(row.getAttribute('class'));
+      });
       tableHeader.forEach((key) => {
         row.appendChild(createTableCell(obj[key]));
       });
@@ -35,7 +47,15 @@ const createTable = function () {
     return cell;
   };
 
-  let loadJsonData = () => {
+  let fillModalWindow = (obj) => {
+    id.textContent = `ID: ${obj.id}`;
+    postAddress.textContent = `Address: ${obj.address.street} street, ${obj.address.suite}, ${obj.address.city} city, ${obj.address.zipcode}`;
+    geo.textContent = `Geographical coordinates: ${obj.address.geo.lat}, ${obj.address.geo.lng}`;
+    phone.textContent = `Phone number: ${obj.phone}`;
+    company.textContent = `Company: ${obj.company.name}`;
+  };
+
+  let loadTableContent = () => {
     fetch('https://jsonplaceholder.typicode.com/users')
       .then((response) => {
         return response.json();
@@ -45,22 +65,51 @@ const createTable = function () {
       });
   };
 
+  let loadAdditionalInfo = (id) => {
+    fetch('https://jsonplaceholder.typicode.com/users')
+      .then((response) => {
+        return response.json();
+      })
+      .then((jsonData) => {
+        fillModalWindow(jsonData[id - 1]);
+      });
+  };
+
   createTableHeader();
-  loadJsonData();
+  loadTableContent();
 
   return table;
 };
 
 let addTable = () => {
-  let container = document.querySelector('.container');
-  let users = container.children;
+  let innerContainer = document.querySelector('.inner-container');
+  let users = innerContainer.children;
   let table = document.querySelector('.users');
   if (users[users.length - 1] == table) {
-    container.removeChild(table);
-    container.appendChild(createTable());
+    innerContainer.removeChild(table);
+    innerContainer.appendChild(createTable());
   } else {
-    container.appendChild(createTable());
+    innerContainer.appendChild(createTable());
   }
 };
 
-btnTest.addEventListener('click', addTable);
+overlay.addEventListener('click', (event) => {
+  const target = event.target;
+  if (target == overlay) {
+    overlay.classList.add('hidden');
+    modal.classList.add('hidden');
+  }
+});
+
+document.body.addEventListener('keyup', (event) => {
+  if ((event.code = 'Escape')) {
+    overlay.classList.add('hidden');
+    modal.classList.add('hidden');
+  }
+});
+
+btnCreateTable.addEventListener('click', addTable);
+btnCloseModal.addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  modal.classList.add('hidden');
+});
