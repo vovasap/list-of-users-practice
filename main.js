@@ -1,115 +1,114 @@
-const btnCreateTable = document.querySelector('.btn__create-table');
-const id = document.querySelector('.id');
-const postAddress = document.querySelector('.post-address');
-const geo = document.querySelector('.geo');
-const phone = document.querySelector('.phone');
-const company = document.querySelector('.company');
-const overlay = document.querySelector('.overlay');
-const modal = document.querySelector('.modal');
-const btnCloseModal = document.querySelector('.btn__close');
+$container = document.createElement('div');
+$container.setAttribute('class', 'inner-container');
+const tableHeader = ['name', 'username', 'email', 'website'];
 
-const createTable = function () {
-  const tableHeader = ['name', 'username', 'email', 'website'];
+const $table = document.createElement('table');
 
-  const table = document.createElement('table');
-  table.setAttribute('class', 'users');
+const $overlay = document.createElement('div');
+$overlay.setAttribute('class', 'overlay hidden');
 
-  let createTableHeader = () => {
-    let row = table.appendChild(createTableRow());
-    tableHeader.forEach((header) => {
-      row.appendChild(createTableCell(header.toUpperCase(), 'th'));
-    });
-    return row;
-  };
+const $modal = document.createElement('div');
+$modal.setAttribute('class', 'modal hidden');
 
-  let createTableContent = (jsonData) => {
-    jsonData.forEach((obj) => {
-      let row = table.appendChild(createTableRow());
-      row.setAttribute('class', `${obj.id}`);
-      row.addEventListener('click', () => {
-        overlay.classList.remove('hidden');
-        modal.classList.remove('hidden');
-        loadAdditionalInfo(row.getAttribute('class'));
-      });
-      tableHeader.forEach((key) => {
-        row.appendChild(createTableCell(obj[key]));
-      });
-    });
-  };
+const $btnCloseModal = document.createElement('button');
+$btnCloseModal.setAttribute('class', 'btn__close');
 
-  let createTableRow = () => {
-    return document.createElement('tr');
-  };
+document.body.appendChild($container);
+document.body.appendChild($overlay);
+document.body.appendChild($modal);
 
-  let createTableCell = (data, element = 'td') => {
-    let cell = document.createElement(element);
-    cell.textContent = data;
-    return cell;
-  };
+let createTable = async () => {
+  let users = await (
+    await fetch('https://jsonplaceholder.typicode.com/users')
+  ).json();
 
-  let fillModalWindow = (obj) => {
-    id.textContent = `ID: ${obj.id}`;
-    postAddress.textContent = `Address: ${obj.address.street} street, ${obj.address.suite}, ${obj.address.city} city, ${obj.address.zipcode}`;
-    geo.textContent = `Geographical coordinates: ${obj.address.geo.lat}, ${obj.address.geo.lng}`;
-    phone.textContent = `Phone number: ${obj.phone}`;
-    company.textContent = `Company: ${obj.company.name}`;
-  };
+  let $header = createTableHeader();
+  let $content = createTableContent(users);
 
-  let loadTableContent = () => {
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then((response) => {
-        return response.json();
-      })
-      .then((jsonData) => {
-        createTableContent(jsonData);
-      });
-  };
-
-  let loadAdditionalInfo = (id) => {
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then((response) => {
-        return response.json();
-      })
-      .then((jsonData) => {
-        fillModalWindow(jsonData[id - 1]);
-      });
-  };
-
-  createTableHeader();
-  loadTableContent();
-
-  return table;
+  $table.appendChild($header);
+  $content.forEach((row) => {
+    $table.appendChild(row);
+  });
+  $container.appendChild($table);
 };
 
-let addTable = () => {
-  let innerContainer = document.querySelector('.inner-container');
-  let users = innerContainer.children;
-  let table = document.querySelector('.users');
-  if (users[users.length - 1] == table) {
-    innerContainer.removeChild(table);
-    innerContainer.appendChild(createTable());
-  } else {
-    innerContainer.appendChild(createTable());
-  }
+let createTableHeader = () => {
+  let $row = document.createElement('tr');
+
+  tableHeader.forEach((header) => {
+    $row.appendChild(createTableCell(header.toUpperCase(), 'th'));
+  });
+  return $row;
 };
 
-overlay.addEventListener('click', (event) => {
-  const target = event.target;
-  if (target == overlay) {
-    overlay.classList.add('hidden');
-    modal.classList.add('hidden');
+let createTableCell = (text, element = 'td') => {
+  let $cell = document.createElement(element);
+  $cell.textContent = text;
+  return $cell;
+};
+
+let createTableContent = (users) => {
+  let $content = [];
+  users.forEach((user) => {
+    let $row = document.createElement('tr');
+    $row.setAttribute('class', `${user.id}`);
+    $row.addEventListener('click', () => {
+      $modal.appendChild($btnCloseModal);
+      $btnCloseModal.textContent = 'close';
+      $modal.appendChild(getModalContent(user));
+      $overlay.classList.remove('hidden');
+      $modal.classList.remove('hidden');
+      // loadAdditionalInfo($row.getAttribute('class'));
+    });
+    tableHeader.forEach((key) => {
+      $row.appendChild(createTableCell(user[key]));
+    });
+    $content.push($row);
+  });
+
+  return $content;
+};
+
+let getModalContent = (user, nestingLevel = 0) => {
+  let $content = document.createDocumentFragment();
+  for (const key in user) {
+    let $line = document.createElement('p');
+    if (typeof user[key] === 'object') {
+      $line.textContent = `${key}: `;
+      $content.appendChild($line);
+      $line.style.paddingLeft = nestingLevel * 15 + 'px';
+      let newNestingLevel = 1 + nestingLevel;
+      $content.appendChild(getModalContent(user[key], newNestingLevel));
+    } else {
+      $line.style.paddingLeft = nestingLevel * 15 + 'px';
+      $line.textContent = `${key}: ${user[key]}`;
+      $content.appendChild($line);
+    }
   }
-});
+  return $content;
+};
+
+createTable();
 
 document.body.addEventListener('keyup', (event) => {
   if ((event.code = 'Escape')) {
-    overlay.classList.add('hidden');
-    modal.classList.add('hidden');
+    $overlay.classList.add('hidden');
+    $modal.classList.add('hidden');
+    $modal.textContent = '';
   }
 });
 
-btnCreateTable.addEventListener('click', addTable);
-btnCloseModal.addEventListener('click', () => {
-  overlay.classList.add('hidden');
-  modal.classList.add('hidden');
+$btnCloseModal.addEventListener('click', () => {
+  $overlay.classList.add('hidden');
+  $modal.classList.add('hidden');
+  $modal.textContent = '';
+});
+
+$overlay.addEventListener('click', (event) => {
+  const target = event.target;
+  if (target == $overlay) {
+    $overlay.classList.add('hidden');
+    $modal.classList.add('hidden');
+    $modal.textContent = '';
+  }
 });
