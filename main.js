@@ -88,27 +88,27 @@ let getModalContent = (user, nestingLevel = 0) => {
   return $content;
 };
 
+let hideModal = function () {
+  $overlay.classList.add('hidden');
+  $modal.classList.add('hidden');
+  $modal.textContent = '';
+};
+
 createTable();
 
 document.body.addEventListener('keyup', (event) => {
   if ((event.code = 'Escape')) {
-    $overlay.classList.add('hidden');
-    $modal.classList.add('hidden');
-    $modal.textContent = '';
+    hideModal();
   }
 });
 
 $btnCloseModal.addEventListener('click', () => {
-  $overlay.classList.add('hidden');
-  $modal.classList.add('hidden');
-  $modal.textContent = '';
+  hideModal();
 });
 
 $overlay.addEventListener('click', (event) => {
   const target = event.target;
   if (target == $overlay) {
-    $overlay.classList.add('hidden');
-    $modal.classList.add('hidden');
-    $modal.textContent = '';
+    hideModal();
   }
 });
